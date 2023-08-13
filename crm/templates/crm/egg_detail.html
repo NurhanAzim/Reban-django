@@ -1,0 +1,28 @@
+{% extends './base.html' %}
+{% block content %}
+<div class="col-md-6 offset-md-3">
+    <h1>Maklumat kutipan pada {{ date }}</h1>
+    <br />
+    <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Size</th>
+            <th class="text-center" scope="col">Kuantiti</th>
+          </tr>
+        </thead>
+        <tbody>
+            {% if collection_list %}
+            {% for collection in collection_list %}
+            <tr>
+                <td>{{ collection.get_size_display }}</td>
+                <td class="text-center">{{ collection.quantity }}</td>
+                <td><button type="button" class="btn btn-warning"><a href="{% url 'crm:egg_update' collection.id %}" class="link-dark link-underline-opacity-0">Kemaskini Rekod</a></button></td>
+            </tr>
+            {% endfor %}
+            {% endif %}
+        </tbody>
+      </table>
+      <br />
+      <button type="button" class="btn btn-danger"><a href="{% url 'crm:egg_delete' date %}" class="link-light link-underline-opacity-0">Padam Rekod</a></button> 
+</div>
+{% endblock %}

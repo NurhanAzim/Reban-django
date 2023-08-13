@@ -1,0 +1,34 @@
+{% extends './base.html' %}
+{% block content %}
+<div class="col-md-6 offset-md-3">
+    <h1>Senarai kutipan harian</h1>
+    <br />
+    <button type="button" class="btn btn-warning"><a href="{% url 'crm:egg_add' %}" class="link-dark link-underline-opacity-0">Tambah rekod baru</a></button>
+    <br /><br />
+    <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Tarikh Kutipan</th>
+            <th scope="col">Kuantiti</th>
+          </tr>
+        </thead>
+        <tbody>
+            {% if egg_list %}
+            {% for egg in egg_list %}
+            <tr>
+                <td><a href="{% url 'crm:egg_detail' date=egg.collection_date|date:'Y-m-d' %}">{{ forloop.counter }}</a></td>
+                <td>{{ egg.collection_date }}</td>
+                <td>{{ egg.quantity }}</td>
+            </tr>
+            {% endfor %}
+            
+        </tbody>
+        {% else %}
+        <tr>
+            <td colspan="3">Tiada rekod</td>
+        </tr>
+        {% endif %}
+      </table>
+</div>
+{% endblock %}

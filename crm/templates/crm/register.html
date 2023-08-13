@@ -1,0 +1,26 @@
+{% extends './base.html' %}
+
+{% block content %}
+
+<div class="col-md-6 offset-md-3">
+    <h1>Daftar Akaun</h1>
+    <br />
+    <form method="POST" action="{% url 'crm:register' %}">
+        {% csrf_token %}
+        {% if form.erros %}
+        <div class="alert alert-danger" role="alert">
+            <strong>Oops!</strong> Sila betulkan ralat berikut:
+            {% for field in form %}
+            {% if field.erros %}
+            {{ field.erros }}
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+        {{ form.as_p }}
+        <br />
+        <button type="submit" class="btn btn-dark">Daftar</button>
+    </form>
+</div>
+
+{% endblock %}

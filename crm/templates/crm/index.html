@@ -1,0 +1,32 @@
+{% extends './base.html' %}
+
+{% block content %}
+
+{% if user.is_authenticated %}
+    <h1>Halaman Utama</h1>
+{% else %}
+<div class="col-md-6 offset-md-3">
+  <h1>Sila Log Masuk</h1>
+<br/>
+<form method="post" action="{% url 'crm:index' %}">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="username" class="form-label">Nama Pengguna</label>
+      <input type="text" class="form-control" name="username" placeholder="Nama Pengguna">
+    </div>
+    <div class="mb-3">
+      <label for="exampleInputPassword1" class="form-label">Kata Laluan</label>
+      <input type="password" class="form-control" name="password" placeholder="Kata Laluan">
+    </div>
+    <button type="submit" class="btn btn-dark">Log Masuk</button>
+  </form>
+  <br/><br
+  <p>Belum ada akaun?</p>
+  <button><a href="{% url 'crm:register' %}" class="link link-dark link-underline-opacity-0">Daftar Akaun</a></button>
+</div>
+{% endif %}
+
+
+
+{% endblock %}
+
