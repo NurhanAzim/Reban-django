@@ -1,11 +1,11 @@
-{% extends './base.html' %}
+{% extends '../base.html' %}
 
 {% block content %}
 
 <div class="col-md-6 offset-md-3">
     <h1>Tambah rekod baru</h1>
     <br />
-    <form method="POST" action="{% url 'crm:egg_add' %}">
+    <form method="POST" action="{% url 'crm:egg_shipment_add' %}">
         {% csrf_token %}
         {% if form.errors %}
         <div class="alert alert-danger" role="alert">

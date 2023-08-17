@@ -1,14 +1,84 @@
 {% extends './base.html' %}
-
+{% load static %}
 {% block content %}
 
 {% if user.is_authenticated %}
-    <h1>Halaman Utama</h1>
+<div class="header">
+  <h1>Dashboard</h1><br/>
+</div>
+<div class="container-fluid p-0">
+  <div class="row justify-content-between">
+        <div class="col-lg-8">
+          <div class="d-flex justify-content-between">
+            <div class="col-lg-4">
+              <div class="card h-100 w-150 text-bg-success" style="max-width: 500px;">
+                <div class="row g-0">
+                  <div class="col-sm-3">
+                    <img src="{% static 'crm/images/chicken.png' %}" class="card-img-top h-100" alt="...">
+                  </div>
+                  <div class="col-sm-12">
+                    <div class="card-body">
+                      <h5 class="card-title">Jumlah Ayam</h5>
+                      <h3 class="card-title">{{ count_dict.chicken_count }}</h3>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-4">
+              <div class="card h-100 w-150 text-bg-success" style="max-width: 500px;">
+                <div class="row g-0">
+                  <div class="col-sm-3">
+                    <img src="{% static 'crm/images/eggs.png' %}" class="card-img-top h-100" alt="...">
+                  </div>
+                  <div class="col-sm-12">
+                    <div class="card-body">
+                      <h5 class="card-title">Stok Telur</h5>
+                      <h3 class="card-title">{{ count_dict.egg_count }}</h3>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-4">
+              <div class="card h-100 w-150 text-bg-success" style="max-width: 500px;">
+                <div class="row g-0">
+                  <div class="col-sm-3">
+                    <img src="{% static 'crm/images/shopping-cart.png' %}" class="card-img-top h-100" alt="...">
+                  </div>
+                  <div class="col-sm-12">
+                    <div class="card-body">
+                      <h5 class="card-title">Jumlah Penjualan</h5>
+                      <h3 class="card-title">{{ count_dict.shipment_count }}</h3>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-4">
+              <div class="card h-100 w-150 text-bg-success" style="max-width: 500px;">
+                <div class="row g-0">
+                  <div class="col-sm-3">
+                    <img src="{% static 'crm/images/coins.png' %}" class="card-img-top h-100" alt="...">
+                  </div>
+                  <div class="col-sm-12">
+                    <div class="card-body">
+                      <h5 class="card-title">Jualan bulan terkini</h5>
+                      <h3 class="card-title">{{ count_dict.sales }}</h3>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+</div>
 {% else %}
 <div class="col-md-6 offset-md-3">
   <h1>Sila Log Masuk</h1>
-<br/>
-<form method="post" action="{% url 'crm:index' %}">
+  <br />
+  <form method="post" action="{% url 'crm:index' %}">
     {% csrf_token %}
     <div class="mb-3">
       <label for="username" class="form-label">Nama Pengguna</label>
@@ -20,8 +90,7 @@
     </div>
     <button type="submit" class="btn btn-dark">Log Masuk</button>
   </form>
-  <br/><br
-  <p>Belum ada akaun?</p>
+  <br /><br <p>Belum ada akaun?</p>
   <button><a href="{% url 'crm:register' %}" class="link link-dark link-underline-opacity-0">Daftar Akaun</a></button>
 </div>
 {% endif %}
@@ -29,4 +98,3 @@
 
 
 {% endblock %}
-

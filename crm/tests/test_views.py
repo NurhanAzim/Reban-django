@@ -87,7 +87,7 @@ class EggViewTest(TestCase):
     def test_egg_view_uses_correct_template(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'crm/egg_view.html')
+        self.assertTemplateUsed(response, 'crm/egg/view.html')
 
     def test_egg_view_with_permisson(self):
         """

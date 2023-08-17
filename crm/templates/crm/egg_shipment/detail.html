@@ -1,0 +1,34 @@
+{% extends '../base.html' %}
+{% block content %}
+<div class="col-md-6 offset-md-3">
+    <h1>Maklumat penjualan telur</h1>
+    <br />
+    {% if shipment_detail %}
+    <table class="table">
+
+        <tr>
+            <th scope="col">Tarikh Dihantar</th>
+            <td class="text-center">{{ shipment_detail.date_shipped }}</td>
+        </tr>
+        <tr>
+            <th scope="col">Nama Pelanggan</th>
+            <td class="text-center">{{ shipment_detail.customer }}</td>
+        </tr>
+        <th scope="col">Kuantiti sebenar telur</th>
+        <td class="text-center">{{ shipment_detail.egg_set.count }}</td>
+        </tr>
+        <tr>
+            <th scope="col" rowspan="3">Huraian</th>
+            <td>
+                {% for size, count_description in shipment_detail.get_eggs_counts_by_size.items %}
+                    {{ count_description }}<br>
+                {% endfor %}
+            </td>
+        </tr>
+    </table>
+    <br />
+    <button type="button" class="btn btn-danger"><a href="{% url 'crm:egg_shipment_delete' shipment_detail.id %}"
+            class="link-light link-underline-opacity-0" onclick="return confirm('Anda pasti mahu menghapuskan rekod berikut?')">Padam Rekod</a></button>
+    {% endif %}
+</div>
+{% endblock %}

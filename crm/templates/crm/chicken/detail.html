@@ -1,4 +1,4 @@
-{% extends './base.html' %}
+{% extends '../base.html' %}
 {% block content %}
 <div class="col-md-6 offset-md-3">
   <h1>Maklumat ayam</h1>
@@ -12,7 +12,7 @@
       </tr>
       <tr>
         <th scope="col">Umur (Minggu)</th>
-        <td class="text-center">{{ chicken.age }}</td>
+        <td class="text-center">{{ chicken.get_age }}</td>
       </tr>
       <th scope="col">Status Kesihatan</th>
       <td class="text-center">{{ chicken.get_health_status_display }}</td>
@@ -27,7 +27,7 @@
   <button type="button" class="btn btn-warning"><a href="{% url 'crm:chicken_update' chicken.id %}"
       class="link-dark link-underline-opacity-0">Kemaskini Rekod</a></button>
   <button type="button" class="btn btn-danger"><a href="{% url 'crm:chicken_delete' chicken.id %}"
-      class="link-light link-underline-opacity-0">Padam Rekod</a></button>
+      class="link-light link-underline-opacity-0" onclick="return confirm('Anda pasti mahu menghapuskan rekod berikut?')">Padam Rekod</a></button>
   {% endif %}
 </div>
 {% endblock %}

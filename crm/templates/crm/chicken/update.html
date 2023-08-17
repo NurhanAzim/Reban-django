@@ -1,4 +1,4 @@
-{% extends './base.html' %}
+{% extends '../base.html' %}
 
 {% block content %}
 
@@ -17,7 +17,6 @@
             {% endfor %}
         </div>
         {% endif %}
-        <p><strong>Size:</strong> {{ size }}</p>
         {{ form.as_p }}
         <br />
         <button type="submit" class="btn btn-warning">Simpan</button>

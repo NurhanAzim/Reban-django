@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand" style="background-color: beige;">
     <div class="container-fluid">
-      <a class="navbar-brand mb-0 h1" href="{% url 'crm:index' %}">REBAN</a>
+      <a class="navbar-brand h1" href="{% url 'crm:index' %}">REBAN</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -8,10 +8,13 @@
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'crm:chicken_view' user.id %}">Ayam</a>
+            <a class="nav-link" href="{% url 'crm:chicken_view' user.id %}">Rekod Ayam</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'crm:egg_view' user.id %}">Kutipan Harian</a>
+            <a class="nav-link" href="{% url 'crm:egg_view' user.id %}">Kutipan Telur</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'crm:egg_shipment_view' user.id %}">Penjualan Telur</a>
           </li>
         </ul>
         <button type="button" class="btn btn-danger"><a href="{% url 'crm:logout' %}" class="link-light link-underline-opacity-0">Log Keluar</a></button>

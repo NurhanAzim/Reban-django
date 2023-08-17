@@ -1,7 +1,7 @@
-{% extends './base.html' %}
+{% extends '../base.html' %}
 {% block content %}
 <div class="col-md-6 offset-md-3">
-    <h1>Senarai Ayam</h1>
+    <h1>Rekod Ayam</h1>
     <br />
     <button type="button" class="btn btn-warning"><a href="{% url 'crm:chicken_add' %}" class="link-dark link-underline-opacity-0">Tambah rekod baru</a></button>
     <br /><br />
@@ -20,7 +20,7 @@
             <tr>
                 <td><a href="{% url 'crm:chicken_detail' chicken.id %}">{{ forloop.counter }}</a></td>
                 <td>{{ chicken.date_added }}</td>
-                <td class="text-center">{{ chicken.age }}</td>
+                <td class="text-center">{{ chicken.get_age }}</td>
                 <td>{{ chicken.get_purpose_display }}</td>
             </tr>
             {% endfor %}

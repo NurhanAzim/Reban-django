@@ -3,25 +3,58 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from .models import Egg, Chicken
-from .forms import SignUpForm, AddEggForm, UpdateEggForm, AddChickenForm
+from .models import Egg, Chicken, EggShipment
+from .forms import SignUpForm, AddEggForm, AddChickenForm, AddShipmentForm
 from django.utils import timezone
 from django.shortcuts import get_object_or_404, get_list_or_404
+from django.db.models import Count
+
+# get sales comparison between current month and previous month
+def get_sales_comparison():
+    current_month = EggShipment.objects.filter(date_shipped__month=timezone.now().month)
+    current_month_sales = sum([shipment.get_total_sales() for shipment in current_month])
+    if current_month_sales == 0:
+        return 'N/A'
+    else:
+        return f'RM {round(current_month_sales, 2)}'
+        
+# get user counts and sales
+def get_user_counts_and_sales(request):
+    chicken_count = Chicken.objects.filter(owner=request.user).count()
+    egg_count = Egg.objects.filter(owner=request.user).exclude(egg_shipment__isnull=False).count()
+    shipment_count = EggShipment.objects.filter(owner=request.user).count()
+    sales = get_sales_comparison()
+    
+    count_dict = defaultdict(int)
+    count_dict['chicken_count'] = chicken_count
+    count_dict['egg_count'] = egg_count
+    count_dict['shipment_count'] = shipment_count
+    count_dict['sales'] = sales
+    
+    return count_dict
 
 # Authentication
 def index(request):
+    if request.user.is_authenticated:
+        count_dict = get_user_counts_and_sales(request)
+        context = {'count_dict': count_dict}
+        return render(request, "crm/index.html", context)
+    
     if request.method == "POST":
         username = request.POST["username"]
         password = request.POST["password"]
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
+            count_dict = get_user_counts_and_sales(request)
+            context = {'count_dict': count_dict}
             messages.success(request, f'Hi {username}! Selamat Datang')
-            return redirect("crm:index")
+            return render(request, "crm/index.html", context)
         else:
             messages.error(request, "Kata Laluan atau/dan Nama Pengguna tidak sah")
             return redirect("crm:index")
-    return render(request, "crm/index.html")
+    else:
+        return render(request, "crm/index.html")
 
 def logout_view(request):
     logout(request)
@@ -43,23 +76,18 @@ def register_view(request):
 def egg_view(request, pk):
 
     # Get the first egg records of the user
-    egg = get_list_or_404(Egg, owner=pk)[0]
+    egg = Egg.objects.filter(owner=pk).first()
     if not egg:
         messages.error(request, "Anda tidak mempunyai rekod telur")
-        return redirect("crm:index")
+        return render(request, "crm/egg/view.html")
     # Check if the user is the owner of the record
     if request.user == egg.owner:
         # Get daily collection list today and before
-        egg_list = Egg.objects.filter(owner=request.user, collection_date__lte=timezone.now().date()).order_by('-collection_date')
+        egg_list = Egg.objects.filter(owner=request.user, collection_date__lte=timezone.now().date()).values('collection_date').annotate(count=Count('id'))
 
-        # Combine the daily collection list into a dictionary
-        existing_record = defaultdict(int)
-        for egg in egg_list:
-            existing_record[egg.collection_date] += egg.quantity
+        result = [{'collection_date': egg['collection_date'], 'count': egg['count']} for egg in egg_list]
 
-        result = [{'id': id, 'collection_date': date, 'quantity': quantity} for id, (date, quantity) in enumerate(existing_record.items())]
-
-        return render(request, 'crm/egg_view.html', {'egg_list': result})
+        return render(request, 'crm/egg/view.html', {'egg_list': result})
     messages.error(request, "Anda tidak dibenarkan mengakses halaman ini")
     return redirect("crm:egg_view", pk=request.user.id)
 
@@ -68,8 +96,9 @@ def egg_detail(request, date):
 
     # Check if the user is the owner of the record
     if request.user == egg.owner:
-        collection_list = Egg.objects.filter(owner=request.user, collection_date=date)
-        return render(request, 'crm/egg_detail.html', {'collection_list': collection_list, 'date': date})
+        egg_list = Egg.objects.filter(owner=request.user, collection_date=date).values('size').annotate(count=Count('id'))
+        result = [{'size': Egg.EGG_SIZE_CHOICES[egg['size']][1], 'count': egg['count']} for egg in egg_list]
+        return render(request, 'crm/egg/detail.html', {'collection_list': result, 'date': date})
     messages.error(request, "Anda tidak dibenarkan mengakses halaman ini")
     return redirect("crm:egg_detail", pk=request.user.id)
 
@@ -77,33 +106,40 @@ def egg_add(request):
     if request.method == "POST":
         form = AddEggForm(request.POST)
         if form.is_valid():
+            collection_date = timezone.now().date()
+            owner = request.user
             # add information for owner and collection_date column
-            new_egg = form.save(commit=False)
-            new_egg.owner = request.user
-            new_egg.collection_date = timezone.now().date()
+            for size_value, _ in Egg.EGG_SIZE_CHOICES:
+                quantity = form.cleaned_data.get(f'quantity{size_value}')
+                for _ in range(quantity):
+                    Egg.objects.create(owner=owner, collection_date=collection_date, size=size_value)
 
-            # check if the user has already added eggs today with the same size
-            # if yes, update the quantity and id to the existing record
-            if Egg.objects.filter(owner=request.user, collection_date=new_egg.collection_date, size=new_egg.size).exists():
-                new_egg.quantity += Egg.objects.get(owner=request.user, collection_date=new_egg.collection_date, size=new_egg.size).quantity
-                new_egg.id = Egg.objects.get(owner=request.user, collection_date=new_egg.collection_date, size=new_egg.size).id
-            new_egg.save()
             messages.success(request, "Rekod berjaya ditambah")
             return redirect("crm:egg_view", pk=request.user.id)
+        messages.error(request, "Sila masukkan kuantiti telur sekurang-kurangnya 1")
+        return redirect("crm:egg_add")
     form = AddEggForm()
-    return render(request, 'crm/egg_add.html', {'form': form})
+    return render(request, 'crm/egg/add.html', {'form': form})
 
-def egg_update(request, pk):
+def egg_update(request, date):
     # Get the eggs collected on date
-    current_egg = get_object_or_404(Egg, id=pk)
+    egg_list = Egg.objects.filter(owner=request.user, collection_date=date).values('size').annotate(count=Count('id'))
+    result = [{'size': Egg.EGG_SIZE_CHOICES[egg['size']][1], 'count': egg['count']} for egg in egg_list]
     if request.method == "POST":
-        form = UpdateEggForm(request.POST, instance=current_egg)
+        form = AddEggForm(request.POST)
         if form.is_valid():
-            form.save()
+            # Delete the egg records on date
+            egg_records = get_list_or_404(Egg, collection_date=date, owner=request.user)
+            for egg in egg_records:
+                egg.delete()
+            # Add the new egg records on date
+            for size_value, _ in Egg.EGG_SIZE_CHOICES:
+                quantity = form.cleaned_data.get(f'quantity{size_value}')
+                for _ in range(quantity):
+                    Egg.objects.create(owner=request.user, collection_date=date, size=size_value)
             messages.success(request, "Rekod berjaya dikemaskini")
-            return redirect("crm:egg_detail", date=current_egg.collection_date)
-    form = UpdateEggForm(instance=current_egg)
-    return render(request, 'crm/egg_update.html', {'form': form, 'size': current_egg.get_size_display,})
+            return redirect("crm:egg_detail", date)
+    return render(request, 'crm/egg/update.html', {'egg_list': result, 'date': date})
 
 def egg_delete(request, date):
     egg_records = get_list_or_404(Egg, collection_date=date, owner=request.user)
@@ -116,14 +152,14 @@ def egg_delete(request, date):
 
 def chicken_view(request, pk):
     # Get the chicken records of the user
-    chicken_list = get_list_or_404(Chicken, owner=pk)
+    chicken_list = Chicken.objects.filter(owner=pk).order_by('-date_added')
 
     if not chicken_list:
-        messages.error(request, "Maklumat ayam tidak wujud")
-        return redirect("crm:index")
+        messages.error(request, "Tiada rekod ayam")
+        return render(request, "crm/chicken/view.html")
     # Check if the user is the owner of the record
     if request.user == chicken_list[0].owner:
-        return render(request, 'crm/chicken_view.html', {'chicken_list': chicken_list})
+        return render(request, 'crm/chicken/view.html', {'chicken_list': chicken_list})
     messages.error(request, "Anda tidak dibenarkan mengakses halaman ini")
     return redirect("crm:chicken_view", pk=request.user.id)
 
@@ -133,12 +169,11 @@ def chicken_detail(request, pk):
         messages.error(request, "Maklumat ayam tidak wujud")
         return redirect("crm:chicken_view", pk=request.user.id)
     # Check if the user is the owner of the record
-    if request.user == chicken.owner:
-        return render(request, 'crm/chicken_detail.html', {'chicken': chicken})
-    else:
+    if request.user != chicken.owner:
         messages.error(request, "Anda tidak dibenarkan mengakses halaman ini")
-        return redirect(request, 'crm:chicken_view.html', pk=request.user.id)
-
+        return redirect(request, 'crm:chicken/view.html', pk=request.user.id)
+    return render(request, 'crm/chicken/detail.html', {'chicken': chicken})
+        
 def chicken_add(request):
     today = timezone.now().date()
     if request.method == "POST":
@@ -153,7 +188,7 @@ def chicken_add(request):
             messages.success(request, "Maklumat ayam berjaya ditambah")
             return redirect('crm:chicken_view', pk=request.user.id)
     form = AddChickenForm()
-    return render(request, 'crm/chicken_add.html', {'form': form, 'today': today})
+    return render(request, 'crm/chicken/add.html', {'form': form, 'today': today})
 
 def chicken_update(request, pk):
     current_chicken = get_object_or_404(Chicken, id=pk)
@@ -166,9 +201,8 @@ def chicken_update(request, pk):
             form.save()
             messages.success(request, "Maklumat ayam berjaya dikemaskini")
             return redirect('crm:chicken_detail', pk=current_chicken.id)
-    
     form = AddChickenForm(instance=current_chicken)
-    return render(request, 'crm/chicken_update.html', {'form': form})
+    return render(request, 'crm/chicken/update.html', {'form': form})
 
 def chicken_delete(request, pk):
     chicken = get_object_or_404(Chicken, id=pk)
@@ -179,3 +213,84 @@ def chicken_delete(request, pk):
     messages.success(request, "Maklumat ayam berjaya dipadam")
     return redirect("crm:chicken_view", pk=request.user.id)
 
+# Egg Shipment
+
+def egg_shipment_view(request, pk):
+    # Get the egg shipment record of the user
+    shipment_list = EggShipment.objects.filter(owner=pk).order_by('-date_shipped')
+
+    if not shipment_list:
+        messages.error(request, "Tiada rekod penghantaran telur")
+        return render(request, "crm/egg_shipment/view.html")
+    
+    # Check if the user is the owner of the record
+    if request.user == shipment_list[0].owner:
+        return render(request, 'crm/egg_shipment/view.html', {'shipment_list': shipment_list})
+    
+    messages.error(request, "Anda tidak dibenarkan mengakses halaman ini")
+    return redirect("crm:egg_shipment_view", pk=request.user.id)
+
+def egg_shipment_detail(request, pk):
+    shipment_detail = get_object_or_404(EggShipment, id=pk)
+    if not shipment_detail:
+        messages.error(request, "Maklumat penjualan telur tidak wujud")
+        return redirect('crm:egg_shipment_view', pk=request.user.id)
+    # Check if the user is the owner of the record
+    if request.user != shipment_detail.owner:
+        messages.error(request, "Anda tidak dibenarkan mengakses halaman ini")
+        return redirect('crm:egg_shipment_view', pk=request.user.id)
+    return render(request, 'crm/egg_shipment/detail.html', {'shipment_detail': shipment_detail})
+
+def egg_shipment_add(request):
+    if request.method == "POST":
+         form = AddShipmentForm(request.user, request.POST)
+         if form.is_valid():
+             egg_shipment = form.save(commit=False)
+             egg_shipment.owner = request.user
+             egg_shipment.save()
+             quantity = form.cleaned_data['eggs_quantity']
+             shipment_quantity = quantity * 12
+             # Check if the shipment is mixed size
+             if form.cleaned_data['is_mixed_size']:
+                # Get egg record which is not in any shipment
+                current_egg = Egg.objects.filter(owner=request.user, egg_shipment__isnull=True).order_by('size').order_by('collection_date')
+                # Check if all egg records are enough to fulfill the shipment
+                if current_egg.count() < shipment_quantity:
+                    messages.error(request, "Tiada telur yang mencukupi untuk penghantaran")
+                    egg_shipment.delete()
+                    return redirect('crm:egg_shipment_add')
+                for egg in current_egg:
+                    egg.egg_shipment = egg_shipment
+                    egg.save()
+                    if Egg.objects.filter(egg_shipment=egg_shipment).count() == shipment_quantity:
+                        break 
+             else:
+                # Get oldest egg record with the same size
+                current_egg = Egg.objects.filter(owner=request.user, egg_shipment__isnull=True, size=form.cleaned_data['size']).order_by('-collection_date')
+                # Check if the egg record is enough to fulfill the shipment
+                if current_egg.count() < shipment_quantity:
+                    messages.error(request, "Tiada telur yang mencukupi untuk penghantaran")
+                    egg_shipment.delete()
+                    return redirect('crm:egg_shipment_add')
+                else:
+                    for egg in current_egg:
+                        egg.egg_shipment = egg_shipment
+                        egg.save()
+                        if Egg.objects.filter(egg_shipment=egg_shipment).count() == shipment_quantity:
+                            break 
+             
+             messages.success(request, "Rekod berjaya ditambah")
+             return redirect("crm:egg_shipment_view", pk=request.user.id)
+         messages.error(request, "Rekod tidak berjaya ditambah")
+         return redirect("crm:egg_shipment_add")
+    form = AddShipmentForm(request.user)
+    return render(request, 'crm/egg_shipment/add.html', {'form': form})
+
+def egg_shipment_delete(request, pk):
+    shipment_record = EggShipment.objects.get(id=pk)
+    if not shipment_record:
+        messages.error(request, "Rekod tidak wujud")
+        return redirect("crm:egg_shipment_view", pk=request.user.id)
+    shipment_record.delete()
+    messages.success(request, "Rekod berjaya dipadam")
+    return redirect("crm:egg_shipment_view", pk=request.user.id)

@@ -1,0 +1,35 @@
+{% extends '../base.html' %}
+{% block content %}
+<div class="col-md-6 offset-md-3">
+    <h1>Rekod Penjualan Telur</h1>
+    <br />
+    <button type="button" class="btn btn-warning"><a href="{% url 'crm:egg_shipment_add' %}" class="link-dark link-underline-opacity-0">Tambah rekod baru</a></button>
+    <br /><br />
+    <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Tarikh Dijual</th>
+            <th scope="col" class="text-center">Nama Pelanggan</th>
+            <th scope="col">Kuantiti telur (dozen)</th>
+          </tr>
+        </thead>
+        <tbody>
+            {% if shipment_list %}
+            {% for shipment in shipment_list %}
+            <tr>
+                <td><a href="{% url 'crm:egg_shipment_detail' shipment.id %}">{{ forloop.counter }}</a></td>
+                <td>{{ shipment.date_shipped }}</td>
+                <td class="text-center">{{ shipment.customer }}</td>
+                <td class="text-center">{{ shipment.get_total_dozens }}</td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-center">Tiada rekod</td>
+            </tr>
+            {% endif %}
+        </tbody>
+      </table>
+</div>
+{% endblock %}
