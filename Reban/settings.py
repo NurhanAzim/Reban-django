@@ -14,6 +14,10 @@ from pathlib import Path
 import os
 import sys
 import dj_database_url
+from dotenv import load_dotenv, find_dotenv
+
+# load .env file
+load_dotenv(find_dotenv())
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", get_random_secret_key())
@@ -26,7 +30,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-*34ig%qc%i9je(ofowj=94oho5i0c8#9n8d*x-%mhj+7fk7_*_'
+SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "False") == "True"
@@ -134,7 +138,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / "static"]
+STATICFILES_DIRS = [BASE_DIR / "crm/static/crm"]
 # STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 STATIC_ROOT = BASE_DIR/"assets"
 
@@ -143,6 +147,8 @@ STATIC_ROOT = BASE_DIR/"assets"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 LOGIN_URL = '/'
 
